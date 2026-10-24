@@ -1,5 +1,6 @@
 'use strict';
-const ROUTING_URL='https://raw.githubusercontent.com/demonslay677/team-notes/live/current.json';
+const ROUTING_URL='https://api.github.com/repos/demonslay677/team-notes/contents/current.json?ref=live';
+const FALLBACK_URL='https://raw.githubusercontent.com/demonslay677/team-notes/live/current.json';
 const status=document.getElementById('status'),retry=document.getElementById('retry');
 async function openBoard(){
   retry.hidden=true;status.textContent='Finding the board’s current address…';
@@ -7,7 +8,8 @@ async function openBoard(){
   // Keep the invitation out of the address bar while routing metadata is fetched.
   if(fragment)history.replaceState(null,'',location.pathname+location.search);
   try{
-    const response=await fetch(ROUTING_URL+'?v='+Date.now(),{cache:'no-store',referrerPolicy:'no-referrer',signal:AbortSignal.timeout(15000)});
+    let response=await fetch(ROUTING_URL+'&v='+Date.now(),{headers:{Accept:'application/vnd.github.raw+json'},cache:'no-store',referrerPolicy:'no-referrer',signal:AbortSignal.timeout(15000)});
+    if(!response.ok)response=await fetch(FALLBACK_URL+'?v='+Date.now(),{cache:'no-store',referrerPolicy:'no-referrer',signal:AbortSignal.timeout(15000)});
     if(!response.ok)throw new Error('Routing information is temporarily unavailable.');
     const data=await response.json();
     if(data.version!==1||!/^https:\/\/[a-z0-9-]+\.trycloudflare\.com$/.test(data.origin))throw new Error('The board address could not be verified.');
